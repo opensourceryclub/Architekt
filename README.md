@@ -66,9 +66,8 @@ For more information on how to use layouts, see the handlebars-layouts README.
 #### Helpers
 
 Helpers are JavaScript files that export Handlebars helper functions. The name
-of the file does not matter, as long as it ends in `.js`. You may export more 
+of the file does not matter, as long as it ends in `.js`. You may export more
 that one helper function per file.
-
 
 ### Rendering Your Site
 
@@ -89,7 +88,7 @@ The following are features we are planning on adding to Architekt:
 
 ### Authors
 
-- Donald Isaac (https://www.opensourceryumd.com)
+- [Donald Isaac](https://www.opensourceryumd.com)
 
 ### License
 
