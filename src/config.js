@@ -13,7 +13,8 @@ const DEFAULT_CONFIG = {
         controllerDir: 'data/',
         partialDirs: ['partials'],
         layoutDir: 'layouts/',
-        helperDir: 'helpers/'
+        helperDir: 'helpers/',
+        assetDir: 'assets/'
     }
 };
 class Config {
@@ -25,7 +26,8 @@ class Config {
         controllerDir: 'data/',
         partialDirs: ['partials'],
         layoutDir: 'layouts/',
-        helperDir: 'helpers/'
+        helperDir: 'helpers/',
+        assetDir: 'assets/'
     }
 
     root = null;
@@ -78,7 +80,7 @@ class Config {
     }
 
 	/**
-	 * Gets the absolute path to a resource in the config.
+	 * Gets the absolute path to a resource in the source code.
 	 * 
 	 * @param {string} res The name of the resource
 	 * 

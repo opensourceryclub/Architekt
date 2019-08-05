@@ -13,7 +13,7 @@ const [access, writeFile, mkdir] = [
 
 const { DEFAULT_CONFIG, DEFAULT_CONFIG_FILE_NAME } = require('../config');
 
-module.exports = async function gen(name, cmd) {
+module.exports = async function init(name, cmd) {
     const projFolder = path.join(process.cwd(), name)
     try {
         await access(projFolder, fs.constants.F_OK);

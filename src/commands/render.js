@@ -1,16 +1,16 @@
-const Promise = require('bluebird');
-const hbs = require('handlebars');
-const layouts = require('handlebars-layouts');
-const log = require('ulog')('architekt:cmd:render');
-const fs = require('fs');
-const path = require('path');
-const { Config } = require('../config');
+const Promise = require('bluebird')
+const hbs = require('handlebars')
+const layouts = require('handlebars-layouts')
+const log = require('ulog')('architekt:cmd:render')
+const fs = require('fs')
+const path = require('path')
+const { Config } = require('../config')
 
 // Async functions are neat
 const [readdir, readFile, writeFile] = [
     fs.readdir,
     fs.readFile,
-    fs.writeFile
+    fs.writeFile,
 ].map(func => Promise.promisify(func))
 
 hbs.registerHelper(layouts(hbs))
@@ -22,29 +22,30 @@ hbs.registerHelper(layouts(hbs))
  */
 module.exports = function render(config) {
 
-    const OUT_DIR_PATH = config.pathTo('outDir');
+    const OUT_DIR_PATH = config.pathTo('outDir')
     // Location of handlebars templates
-    const TEMPLATE_SOURCE_DIR = config.pathTo('templateDir');
+    const TEMPLATE_SOURCE_DIR = config.pathTo('templateDir')
     // Location of JSON data
-    const TEMPLATE_DATA_DIR = config.pathTo('controllerDir');
-    const LAYOUT_DIR = config.pathTo('layoutDir');
-    const HELPER_DIR = config.pathTo('helperDir');
+    const TEMPLATE_DATA_DIR = config.pathTo('controllerDir')
+    const LAYOUT_DIR = config.pathTo('layoutDir')
+    const HELPER_DIR = config.pathTo('helperDir')
+    const ASSETS_DIR = config.pathTo('assetsDir')
 
     // Location of directories containing partials.
     // Elements of this array can be strings or string arrays.
     // When a string array, each element represents a subdirectory.
-    const TEMPLATE_PARTIALS_DIRS = config.pathTo('partialDirs');
+    const TEMPLATE_PARTIALS_DIRS = config.pathTo('partialDirs')
 
-    log.log(`Template path: ${TEMPLATE_SOURCE_DIR}`);
-    log.log(`Data path: ${TEMPLATE_DATA_DIR}`);
-    log.log(`Output path: ${OUT_DIR_PATH}\n`);
+    log.log(`Template path: ${TEMPLATE_SOURCE_DIR}`)
+    log.log(`Data path: ${TEMPLATE_DATA_DIR}`)
+    log.log(`Output path: ${OUT_DIR_PATH}\n`)
 
 	/**
-	   * Reads and parses handlebars templates from the template directory.
-	   *
-	   * The promise resolves with the following shape
-	   * ```js
-	   * {
+	 * Reads and parses handlebars templates from the template directory.
+	 *
+	 * The promise resolves with the following shape
+	 * ```js
+	 * {
 	 *    index: "<index.html.hbs file contents>",
 	 *    about: "<about.html.hbs file contents>",
 	 *    // etc
@@ -71,7 +72,7 @@ module.exports = function render(config) {
             source_map[source.page] = source.value
             return source_map
         }, Object.create(null))
-        .catch(raise('Error thrown while reading templates'))
+        .catch(raise('Error thrown while reading templates'));
 
 
 
@@ -132,11 +133,11 @@ module.exports = function render(config) {
 	 * Register handlebars partials
 	 */
     const partials_async = () => Promise.each(TEMPLATE_PARTIALS_DIRS, dir => {
-        readdir(dir, 'utf-8') // Get the files in one of the partial directories
+        return readdir(dir, 'utf-8') // Get the files in one of the partial directories
             // Filter out anything that isn't a handlebars file or doesn't start with '_'
             .filter(partial => partial.startsWith('_') && partial.endsWith('.hbs'))
             .each(partial => {
-                readFile(path.join(dir, partial), 'utf-8')
+                return readFile(path.join(dir, partial), 'utf-8')
                     .then(partial_contents => { // Read the contents and register it with handlebars
                         let partial_name = partial.split('.')[0]
                         partial_name = partial_name.substr(1, partial_name.length - 1)
@@ -175,6 +176,24 @@ module.exports = function render(config) {
             }
         })
         .catch(raise('Error thrown while registering helpers'))
+
+    // TODO: Implement this correctly and add it to the join()
+    const styles_async = () => new Promise((resolve, reject) => {
+        log.info('Rendering stylesheets...')
+        // path to styles directory in source
+        let assetDir = config.pathTo('assetDir')
+        // path to styles directory in build
+        let buildAssetDir = path.join(config.pathTo('outDir'), config.resources.assetDir, 'styles')
+        // remove trailing separator character(s)
+        if (assetDir.endsWith(path.sep))
+            assetDir = assetDir.substr(0, assetDir.length - path.sep.length)
+
+        glob(`${assetDir}/styles/**/*.scss`)
+        .pipe(sass())
+        .pipe(fs.createWriteStream())
+        .on('finish', resolve)
+        .on('error', reject)
+    })
 
 
     // const pages = []

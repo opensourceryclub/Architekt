@@ -51,15 +51,15 @@ program.command('render')
     commands.render(config);
   })
 
-program.command('gen [name]')
+program.command('init [name]')
   .description('Creates a new Architekt project with the specified project name')
-  .usage('ark gen [options] <project-name>')
+  .usage('ark init [options] <project-name>')
   .option('-v, --verbose', 'Displays verbose info messages')
   .option('-S, --silent', 'Silent run. Only errors are displayed')
   .option('-D, --debug', 'Debug messages are displayed. Careful, this might flood your screen')
   .action(function(name, cmd) {
     setLoggerLevel(cmd);
-    commands.gen(name, cmd);
+    commands.init(name, cmd);
   });
 
 program.parse(process.argv);

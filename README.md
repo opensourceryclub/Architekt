@@ -21,7 +21,7 @@ Note that Architekt requires Node v12.x.x to work.
 Start by creating a new project
 
 ```sh
-ark gen MyProject # run ark gen -h for more options
+ark init MyProject # run ark gen -h for more options
 cd MyProject
 ```
 
