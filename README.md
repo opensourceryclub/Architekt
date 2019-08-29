@@ -14,8 +14,6 @@ Install Architekt globally from NPM
 npm install -g architekt
 ```
 
-Note that Architekt requires Node v12.x.x to work.
-
 ### Getting Started
 
 Start by creating a new project

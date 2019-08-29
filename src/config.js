@@ -19,17 +19,6 @@ const DEFAULT_CONFIG = {
 };
 class Config {
 
-    source = 'src/';
-    outDir = 'build/';
-    resources = { // relative to source directory
-        templateDir: 'views/',
-        controllerDir: 'data/',
-        partialDirs: ['partials'],
-        layoutDir: 'layouts/',
-        helperDir: 'helpers/',
-        assetDir: 'assets/'
-    }
-
     root = null;
 
 	/**
@@ -45,6 +34,17 @@ class Config {
 	 * @param {commander.CommanderStatic} cmd The commander object containing command line arguments
 	 */
     constructor(cmd) {
+        this.source = 'src/';
+        this.outDir = 'build/';
+        this.resources = { // relative to source directory
+            templateDir: 'views/',
+            controllerDir: 'data/',
+            partialDirs: ['partials'],
+            layoutDir: 'layouts/',
+            helperDir: 'helpers/',
+            assetDir: 'assets/'
+        }
+
         let config_file_name = cmd.configFile ? path.basename(cmd.configFile) : DEFAULT_CONFIG_FILE_NAME
         let config_file_dir = cmd.configFile ? path.dirname(cmd.configFile) : undefined
         log.debug(`Config file name: ${config_file_name}`);
