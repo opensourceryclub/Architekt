@@ -29,7 +29,7 @@ module.exports = function render(config) {
     const TEMPLATE_DATA_DIR = config.pathTo('controllerDir')
     const LAYOUT_DIR = config.pathTo('layoutDir')
     const HELPER_DIR = config.pathTo('helperDir')
-    const ASSETS_DIR = config.pathTo('assetsDir')
+    const ASSETS_DIR = config.pathTo('assetDir')
 
     // Location of directories containing partials.
     // Elements of this array can be strings or string arrays.

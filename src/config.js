@@ -19,8 +19,6 @@ const DEFAULT_CONFIG = {
 };
 class Config {
 
-    root = null;
-
 	/**
 	 * Creates a new configuration object.
 	 * 
@@ -34,6 +32,7 @@ class Config {
 	 * @param {commander.CommanderStatic} cmd The commander object containing command line arguments
 	 */
     constructor(cmd) {
+        this.root = null;
         this.source = 'src/';
         this.outDir = 'build/';
         this.resources = { // relative to source directory
@@ -43,7 +42,7 @@ class Config {
             layoutDir: 'layouts/',
             helperDir: 'helpers/',
             assetDir: 'assets/'
-        }
+        };
 
         let config_file_name = cmd.configFile ? path.basename(cmd.configFile) : DEFAULT_CONFIG_FILE_NAME
         let config_file_dir = cmd.configFile ? path.dirname(cmd.configFile) : undefined
@@ -55,7 +54,7 @@ class Config {
         let user_config = JSON.parse(fs.readFileSync(path.join(this.root, config_file_name), 'utf-8'))
         // Override defaults with user config data
         this._setConfig(user_config);
-
+        log.debug(`Project root: ${this.root}`)
         // Command line arguments override both system defaults and user config data
         log.debug(cmd);
         [
@@ -69,7 +68,8 @@ class Config {
             'templateDir',
             'controllerDir',
             'layoutDir',
-            'helperDir'
+            'helperDir',
+            'assetDir'
         ].forEach(resource => {
             this.resources[resource] = cmd[resource] || this.resources[resource]
         })
@@ -77,6 +77,8 @@ class Config {
         if (cmd.partialDirs) {
             this.resources.partialDirs = cmd.partialDirs.split(',')
         }
+
+        log.debug(`Resource dirs: ${this.resources}`)
     }
 
 	/**

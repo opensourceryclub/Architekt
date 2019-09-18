@@ -20,8 +20,9 @@
  */
 const program     = require('commander')
 const ulog        = require('ulog')
-const commands    = require('../src/commands');
-const { Config }  = require('../src/config');
+const commands    = require('../src/commands')
+const { Config }  = require('../src/config')
+const package     = require('../package.json')
 
 /*
  * ============================================================================
@@ -30,7 +31,7 @@ const { Config }  = require('../src/config');
  */
 
 // Parse command line arguments
-program.version('1.0.0')
+program.version(package.version)
 
 program.command('render')
   .description('Builds source files into a static site')
@@ -68,7 +69,7 @@ function setLoggerLevel(cmd) {
   if (cmd.silent) {
     ulog.level = ulog.ERROR
   } else if (cmd.verbose) {
-    ulog.level = ulog.ulog
+    ulog.level = ulog.LOG
   } else if (cmd.debug) {
     ulog.level = ulog.DEBUG
   } else {
