@@ -1,5 +1,9 @@
 # Change Log
 
+## v1.1.2 :rocket:
+
+- Fixed bugs preventing rendering from working
+
 ## v1.1.1 :rocket:
 
 - Architekt should now work with previous versions of node.
