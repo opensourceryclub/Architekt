@@ -31,24 +31,27 @@ module.exports = async function init(name, cmd) {
     log.info('Creating config file...');
     const createConfig = writeFile(path.join(projFolder, DEFAULT_CONFIG_FILE_NAME), JSON.stringify(DEFAULT_CONFIG, null, 4));
 
-    // Generate directories
+    // Generate source subdirectories
     await Promise.join(createConfig, genDirectories(projFolder, DEFAULT_CONFIG));
     let genResources = genDirectories(path.join(projFolder, DEFAULT_CONFIG.source), DEFAULT_CONFIG.resources);
     let genPartials = genDirectories(path.join(projFolder, DEFAULT_CONFIG.source), DEFAULT_CONFIG.resources.partialDirs);
     await Promise.join(genResources, genPartials);
+
+    // Create asset subdirectories
+    await genDirectories(path.join(projFolder, DEFAULT_CONFIG.source, DEFAULT_CONFIG.resources.assetDir), DEFAULT_CONFIG.assetDirs);
 }
 
 /**
  * Generates subdirectories specified in an object in some root directory.
- * 
+ *
  * @param {string} root Absolute path of directory to generate subdirectories
  * @param {object | Array<String>} structure Object whos keys will be the names of the directories being generated
- * 
+ *
  * @returns {Promise<void>[]} An array of promises that resolve when the subdirectories are created
  */
 async function genDirectories(root, structure) {
     const createdDirs = [];
-    
+
     if (structure instanceof Array) { // handle arrays
         for (const dir of structure) {
 

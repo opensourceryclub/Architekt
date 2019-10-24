@@ -47,7 +47,18 @@ web page will be named `<page-name>.html`.
 Controllers contain the logic/data that will be plugged into each view. Controllers
 may be JSON or JavaScript files and must follow the naming convention
 `<page-name>.[js,json]`. When a JavaScript file is used, the `module.exports` object
-will be plugged into the page template.
+will be plugged into the page template. Files that start with an
+underscore will be ignored.
+
+#### Stylesheets
+
+Architect renders [SASS](https://sass-lang.com/) stylesheets for you. All
+stylesheets must end in `.scss` or `.sass`, according to SASS conventions.
+Stylesheets must be in the `stylesheets/` subdirectory within your assets
+directory. Partial stylesheets must start with an underscore, such as
+`_stylesheet.scss`. Partials are not outputted as css stylesheets, but may be
+imported into other stylesheets. The `@import` statement resolves stylesheets
+within the `stylesheets/` directory or in `node_modules`.
 
 #### Partials
 
