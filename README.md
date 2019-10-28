@@ -14,6 +14,10 @@ Install Architekt globally from NPM
 npm install -g architekt
 ```
 
+Architekt will now be available as the `ark` command.
+
+---
+
 ### Getting Started
 
 Start by creating a new project
@@ -50,7 +54,11 @@ may be JSON or JavaScript files and must follow the naming convention
 will be plugged into the page template. Files that start with an
 underscore will be ignored.
 
-#### Stylesheets
+#### Assets and Stylesheets
+
+Assets should be put in the `assets/` folder in your source directory. Architekt
+will copy over your assets into the output directory.
+
 
 Architect renders [SASS](https://sass-lang.com/) stylesheets for you. All
 stylesheets must end in `.scss` or `.sass`, according to SASS conventions.
@@ -87,17 +95,24 @@ static site by running
 ark render # See ark render -h for command options
 ```
 
+---
+
+### Contributing
+
+Have some features you would like to see added? Feel free to submit an issue or
+a pull request.
+
+---
+
 ### Features TODO
 
 The following are features we are planning on adding to Architekt:
 
 - Allowing subdirectories in resource/views/controllers directories
-- Assets resource directory support
-- SASS language compilation on `ark render`
 
 ### Authors
 
-- [Donald Isaac](https://www.opensourceryumd.com)
+- [Donald Isaac](https://github.com/DonIsaac)
 
 ### License
 
