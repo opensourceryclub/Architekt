@@ -90,4 +90,4 @@ The following are features we are planning on adding to Architekt:
 
 ### License
 
-Copyright (c) 2019 Open Sourcery. Licensed under the MIT license.
+Copyright (c) 2019-2020 Donald Isaac. Licensed under the GNU GPLv3 license.
