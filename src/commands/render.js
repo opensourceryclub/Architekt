@@ -22,22 +22,31 @@ const Promise = require('bluebird')
 const hbs = require('handlebars')
 const layouts = require('handlebars-layouts')
 const log = require('ulog')('architekt:cmd:render')
+const sass = require('node-sass')
+const ncp = require('ncp').ncp
+const del = require('del')
 const fs = require('fs')
 const path = require('path')
 const { Config } = require('../config')
 
+// Limit depth of recursive directory copying
+ncp.limit = 16
+
 // Async functions are neat
-const [readdir, readFile, writeFile] = [
+const [readdir, readFile, writeFile, unlink, rmdir, renderSass] = [
     fs.readdir,
     fs.readFile,
     fs.writeFile,
+    fs.unlink,
+    fs.rmdir,
+    sass.render
 ].map(func => Promise.promisify(func))
 
 hbs.registerHelper(layouts(hbs))
 
 /**
  * @param {Config} config The config object to use when rendering
- * 
+ *
  * @returns {Promise<void>}
  */
 module.exports = function render(config) {
@@ -105,9 +114,18 @@ module.exports = function render(config) {
     // Read in the JSON files containing each page's data
     const data_async = () => Promise.try(() => log.log('Loading template data...'))
         .then(() => readdir(TEMPLATE_DATA_DIR, 'utf-8'))
-        .filter(filename => {
-            let split_name = filename.split('.')
-            let filetype = filename.split('.')[split_name.length - 1]
+        .filter(file => {
+            /** @type {string[]} */
+            let split_name = file.split('.')
+            let filename = split_name[0]
+            let filetype = split_name[split_name.length - 1]
+
+            // Ignore files that start with an underscore
+            let is_partial = filename.startsWith('_')
+            if (is_partial) {
+                log.debug(`data: skipping controller partial ${filename}.`)
+                return false
+            }
             // data files must end in .json or .js
             let valid = ['json', 'js'].includes(filetype)
             log.debug(`data: controller file ${filename} ends with ${filetype} is ${valid ? 'valid' : 'invalid'}`)
@@ -198,49 +216,117 @@ module.exports = function render(config) {
         .catch(raise('Error thrown while registering helpers'))
 
     // TODO: Implement this correctly and add it to the join()
-    const styles_async = () => new Promise((resolve, reject) => {
-        log.info('Rendering stylesheets...')
-        // path to styles directory in source
-        let assetDir = config.pathTo('assetDir')
-        // path to styles directory in build
-        let buildAssetDir = path.join(config.pathTo('outDir'), config.resources.assetDir, 'styles')
-        // remove trailing separator character(s)
-        if (assetDir.endsWith(path.sep))
-            assetDir = assetDir.substr(0, assetDir.length - path.sep.length)
+    /*     const styles_async = () => new Promise((resolve, reject) => {
+            log.info('Rendering stylesheets...')
+            // path to styles directory in source
+            let styles_dir = path.join(config.pathTo('assetDir'), 'styles')
+            // path to styles directory in build
+            let build_styles_dir = path.join(config.pathTo('outDir'), config.resources.assetDir, 'styles')
+            // remove trailing separator character(s)
+            if (assetDir.endsWith(path.sep))
+                assetDir = assetDir.substr(0, assetDir.length - path.sep.length)
+        }) */
 
-        glob(`${assetDir}/styles/**/*.scss`)
-        .pipe(sass())
-        .pipe(fs.createWriteStream())
-        .on('finish', resolve)
-        .on('error', reject)
-    })
+    /**
+     * Parses and renders the SASS stylesheets in $assetDir/stylesheets.
+     *
+     * @returns {{name: string, contents: string}[]} an object containing the
+     * stylesheet's name and the rendered contents of the stylesheet.
+     */
+    const styles_async = () => Promise.try(() => log.log('Loading stylesheets...'))
+        .then(() => readdir(path.join(ASSETS_DIR, 'stylesheets'), { encoding: 'utf-8', withFileTypes: true }))
+        .filter(file => { // file is an instance of fs.Dirent
+            if (!file.isFile())
+                return false
+            // File cannot start with an underscore and must end with ."scss" or ."sass"
+            return file.name.match(/^[^_].*\.(?:scss|sass)$/)
+        })
+        .map(async stylesheet => { // stylesheet is an instance of fs.Dirent
+            // Path to the stylesheet
+            let stylesheet_path = path.join(ASSETS_DIR, 'stylesheets', stylesheet.name)
+            let compiled_stylesheet = await renderSass({
+                file: stylesheet_path,
+                includePaths: [
+                    path.join(ASSETS_DIR, 'stylesheets'),
+                    path.join(config.root, 'node_modules')
+                ]
+            })
 
+            return { name: stylesheet.name, contents: compiled_stylesheet.css }
+        })
+        .catch(raise('Error thrown while compiling stylesheets'))
+
+    /**
+     * Recursively copies over the assets directory to the output directory,
+     * then calls `styles_async()` to compile the SASS stylesheets.
+     */
+    const assets_async = () => Promise.try(() => log.log('Copying assets...'))
+        .then(() => {
+            return new Promise((resolve, reject) => {
+                // TODO: Promisify this function
+                ncp(
+                    ASSETS_DIR,                                 // Copying asset sub dir in source dir
+                    path.join(OUT_DIR_PATH, config.resources.assetDir),   // Copying to output dir
+                    { filter: /^((?!stylesheets).)*$/ },         // Don't copy over stylesheets, styles_async handles this
+                    err => {
+                        if (err)
+                            reject(err)
+                        else
+                            resolve()
+                    });
+            })
+        })
+        .catch(raise('Error thrown while copying src asset dir to output asset dir.'))
+        .then(() => fs.promises.mkdir(path.join(OUT_DIR_PATH, config.resources.assetDir, 'stylesheets')))
+        .catch(raise('Error thrown while creating output stylesheet directory'))
+        .then(styles_async)
 
     // const pages = []
-    return Promise.join(sources_async(), data_async(), partials_async(), layouts_async(), helpers_async(),
-        async (sources, data) => {
-            log.log('Rendering templates...')
-            log.debug(`Partials: ${JSON.stringify(Object.keys(hbs.partials))}`)
-            log.debug(`Pages: ${Object.keys(sources)}`)
-            log.debug(`Helpers: ${JSON.stringify(hbs.helpers)}`)
-            for (let page_name in sources) {
-                let template = hbs.compile(sources[page_name])
-                let page;
-                try { // Error thrown if template contains a syntax error
-                    page = template(data[page_name] || {})
-                } catch (err) {
-                    log.error(`Syntax error in page ${page_name}:\n${err.message}`)
-                    log.debug(err.stack)
-                    process.exit(1)
-                }
-                let page_path = path.join(OUT_DIR_PATH, page_name + '.html')
-                log.log(`Rendering ${page_name}...`)
-                // pages.push(await writeFile(page_path, page))
-                await writeFile(page_path, page).then(() => log.log('Finished'))
+    return del([path.join(OUT_DIR_PATH, '**'), `!${OUT_DIR_PATH}`])
+        .catch(raise('Error thrown while cleaning output directory.'))
+        .then(() => {
+            return Promise.join(
+                sources_async(),    // Read in and parse page views
+                data_async(),       // Read in and parse page controllers
+                assets_async(),     // Read in and compile SASS stylesheets
+                partials_async(),   // Read in and register Handlebars partials
+                layouts_async(),    // Read in and register layouts (fancy Handlebars partials)
+                helpers_async(),    // Read in and register Handlebars helper functions
+                async (sources, data, stylesheets) => {
+                    log.log('Rendering templates...')
+                    log.debug(`Partials: ${JSON.stringify(Object.keys(hbs.partials))}`)
+                    log.debug(`Pages: ${Object.keys(sources)}`)
+                    log.debug(`Helpers: ${JSON.stringify(hbs.helpers)}`)
+                    // Write compiled pages to output directory
+                    for (let page_name in sources) {
+                        let template = hbs.compile(sources[page_name])
+                        let page;
+                        try { // Error thrown if template contains a syntax error
+                            page = template(data[page_name] || {})
+                        } catch (err) {
+                            log.error(`Syntax error in page ${page_name}:\n${err.message}`)
+                            log.debug(err.stack)
+                            process.exit(1)
+                        }
+                        let page_path = path.join(OUT_DIR_PATH, page_name + '.html')
+                        log.log(`Rendering ${page_name}...`)
+                        // pages.push(await writeFile(page_path, page))
+                        await writeFile(page_path, page).then(() => log.log('Finished'))
 
-            }
+                    }
+                    // Write compiled stylesheets to output directory
+                    for await (let stylesheet of stylesheets) {
+                        let { name, contents } = stylesheet;
+                        name = name.replace(/\.(?:scss|sass)/, '.css')
+                        let stylesheet_out_path = path.join(OUT_DIR_PATH, config.resources.assetDir, 'stylesheets', name)
+                        await writeFile(stylesheet_out_path, contents)
+                            .then(() => log.log(`Saved ${name} to ${stylesheet_out_path}.`))
+                            .catch(raise(`Error thrown while writing stylesheet "${name}"`))
+                    }
+                })
+                .then(() => log.info('Finished rendering.'))
+
         })
-        .then(() => log.info('Finished rendering.'))
 };
 
 function raise(msg) {

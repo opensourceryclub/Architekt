@@ -37,20 +37,25 @@ const DEFAULT_CONFIG = {
         layoutDir: 'layouts/',
         helperDir: 'helpers/',
         assetDir: 'assets/'
-    }
+    },
+    assetDirs: [
+        'stylesheets/',
+        'scripts/',
+        'images'
+    ]
 };
 class Config {
 
 	/**
 	 * Creates a new configuration object.
-	 * 
+	 *
 	 * The object is initially populated
 	 * with a set of default values for each setting. User settings are specified
 	 * first by a config file. The constructor searches for a config file from the
 	 * directory where the command was called, reads in the file, and overwrites
 	 * the default settings with user-defined settings. These in turn can be
 	 * overwritten by command line arguments.
-	 * 
+	 *
 	 * @param {commander.CommanderStatic} cmd The commander object containing command line arguments
 	 */
     constructor(cmd) {
@@ -104,13 +109,13 @@ class Config {
     }
 
 	/**
-	 * Gets the absolute path to a resource in the source code.
-	 * 
-	 * @param {string} res The name of the resource
-	 * 
-	 * @returns {string | string[]} The path to the specified resource
-	 * 
-	 * @throws If the resource name is invalid or if the resource doesn't exist
+	 * Gets the absolute path to a subdirectory in the source code.
+	 *
+	 * @param {string} res The name of the subdirectory
+	 *
+	 * @returns {string | string[]} The path to the specified subdirectory
+	 *
+	 * @throws If the subdirectory name is invalid or if the subdirectory doesn't exist
 	 */
     pathTo(res) {
         if (!res || typeof res !== 'string')
