@@ -33,12 +33,14 @@ const { Config } = require('../config')
 ncp.limit = 16
 
 // Async functions are neat
-const [readdir, readFile, writeFile, unlink, rmdir, renderSass] = [
+const [readdir, mkdir, readFile, writeFile, unlink, rmdir, access, renderSass] = [
     fs.readdir,
+	fs.mkdir,
     fs.readFile,
     fs.writeFile,
     fs.unlink,
     fs.rmdir,
+	fs.access
     sass.render
 ].map(func => Promise.promisify(func))
 
@@ -293,6 +295,14 @@ module.exports = function render(config) {
                 layouts_async(),    // Read in and register layouts (fancy Handlebars partials)
                 helpers_async(),    // Read in and register Handlebars helper functions
                 async (sources, data, stylesheets) => {
+					try {
+						await access(OUT_DIR_PATH, fs.constants.F_OK)
+						log.debug(`out dir ${OUT_DIR_PATH} exists, continuing`)
+					} catch (err) {
+						log.warn(`out dir ${OUT_DIR_PATH} does not exist, creating it now.`)
+						await mkdir(OUT_DIR_PATH, { recursive: true })
+							.catch(raise(`Could not make directory ${OUT_DIR_PATH}`))
+					}
                     log.log('Rendering templates...')
                     log.debug(`Partials: ${JSON.stringify(Object.keys(hbs.partials))}`)
                     log.debug(`Pages: ${Object.keys(sources)}`)
@@ -331,7 +341,7 @@ module.exports = function render(config) {
 
 function raise(msg) {
     return err => {
-        log.error(msg)
-        log.error(err)
+        log.error(`${msg}: ${err.message}`)
+        log.debug(err.stack)
     }
 }
