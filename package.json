@@ -34,7 +34,7 @@
     "handlebars": "^4.7.6",
     "handlebars-layouts": "^3.1.4",
     "ncp": "^2.0.0",
-    "node-sass": "^4.13.0",
+    "node-sass": "^7.0.0",
     "ulog": "^1.1.0"
   },
   "devDependencies": {
